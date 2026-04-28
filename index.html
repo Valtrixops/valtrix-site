@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Valtrix — Deterministic AI Execution System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --bg-elev: #101216;
+    --bg-card: #0e1014;
+    --line: #1a1d23;
+    --line-strong: #262a32;
+    --text: #e8e9ec;
+    --text-dim: #8b8f97;
+    --text-mute: #5a5e67;
+    --accent: #d4ff3a;
+    --accent-dim: #9bbc1f;
+    --warn: #ff5d5d;
+    --ok: #4ade80;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid texture across whole page */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 70%);
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(10, 11, 13, 0.7);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .logo-mark {
+    width: 22px; height: 22px;
+    border: 1.5px solid var(--accent);
+    background: var(--bg);
+    position: relative;
+    transform: rotate(45deg);
+  }
+  .logo-mark::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background: var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    font-size: 14px;
+  }
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .nav-cta:hover { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 768px) { .nav-links { display: none; } }
+
+  /* ===== HERO ===== */
+  .hero {
+    padding: 120px 0 100px;
+    position: relative;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 100px;
+    margin-bottom: 32px;
+  }
+  .hero-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(44px, 7vw, 88px);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    margin-bottom: 32px;
+    max-width: 980px;
+  }
+  h1 .accent {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 300;
+  }
+  h1 .strike {
+    color: var(--text-mute);
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--warn);
+    font-weight: 300;
+  }
+  .hero-sub {
+    font-size: 19px;
+    color: var(--text-dim);
+    max-width: 640px;
+    margin-bottom: 48px;
+    line-height: 1.5;
+  }
+  .hero-sub strong { color: var(--text); font-weight: 500; }
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: #0a0b0d;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px 22px;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-primary:hover {
+    background: #e3ff5c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(212, 255, 58, 0.2);
+  }
+  .btn-primary svg { width: 14px; height: 14px; }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 13px 20px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .btn-secondary:hover { border-color: var(--text-dim); }
+
+  /* Hero pipeline diagram */
+  .hero-pipeline {
+    margin-top: 80px;
+    padding: 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    overflow-x: auto;
+  }
+  .pipeline-label {
+    color: var(--text-mute);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .pipeline-flow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .pipe-node {
+    padding: 10px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .pipe-node.highlight {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .pipe-arrow {
+    color: var(--text-mute);
+    font-size: 14px;
+  }
+
+  /* ===== SECTION SCAFFOLD ===== */
+  section { padding: 100px 0; position: relative; }
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 24px;
+  }
+  .section-label::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--accent);
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin-bottom: 24px;
+    max-width: 820px;
+  }
+  h2 .accent { font-style: italic; color: var(--accent); font-weight: 300; }
+  .section-intro {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 640px;
+    margin-bottom: 64px;
+    line-height: 1.5;
+  }
+
+  /* ===== PROBLEM ===== */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .problem-card {
+    background: var(--bg);
+    padding: 36px 32px;
+  }
+  .problem-card .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--warn);
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  .problem-card h3 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 17px;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .problem-card p {
+    font-size: 14.5px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+  @media (max-width: 800px) {
+    .problem-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== SOLUTION ===== */
+  .solution-block {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+  .solution-text p {
+    font-size: 17px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .solution-text p strong { color: var(--text); font-weight: 500; }
+  .solution-text .pull {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1.4;
+    padding: 20px 0 20px 24px;
+    border-left: 2px solid var(--accent);
+    margin: 24px 0;
+  }
+  .solution-visual {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .visual-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .visual-row:last-child { border-bottom: none; }
+  .visual-row .key { color: var(--text-mute); }
+  .visual-row .val { color: var(--text); }
+  .visual-row .val.yes { color: var(--accent); }
+  .visual-row .val.no { color: var(--warn); }
+  @media (max-width: 900px) {
+    .solution-block { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  /* ===== HOW IT WORKS ===== */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+  .step {
+    padding: 32px 24px;
+    border-right: 1px solid var(--line);
+    position: relative;
+  }
+  .step:last-child { border-right: none; }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-bottom: 14px;
+    letter-spacing: 0.1em;
+  }
+  .step h3 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+  .step p {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  @media (max-width: 1000px) {
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .step { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .step:nth-child(2n) { border-right: none; }
+    .step:nth-last-child(-n+2) { border-bottom: none; }
+  }
+  @media (max-width: 600px) {
+    .steps { grid-template-columns: 1fr; }
+    .step { border-right: none; border-bottom: 1px solid var(--line); }
+    .step:last-child { border-bottom: none; }
+  }
+
+  /* ===== USE CASES ===== */
+  .usecases {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .usecase {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px;
+    transition: border-color 0.2s ease;
+  }
+  .usecase:hover { border-color: var(--line-strong); }
+  .usecase-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    padding: 4px 10px;
+    border: 1px solid rgba(212, 255, 58, 0.3);
+    border-radius: 100px;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+  .usecase h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .usecase-cmd {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .usecase-cmd .prompt { color: var(--accent); margin-right: 6px; }
+  .usecase p {
+    font-size: 14.5px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+  @media (max-width: 800px) { .usecases { grid-template-columns: 1fr; } }
+
+  /* ===== WHY NOT AGENTS ===== */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .compare-col {
+    padding: 36px 32px;
+    background: var(--bg);
+  }
+  .compare-col.bad { background: var(--bg-card); }
+  .compare-col.good { background: linear-gradient(180deg, rgba(212,255,58,0.04), transparent); }
+  .compare-head {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .compare-col.bad .compare-head { color: var(--warn); }
+  .compare-col.good .compare-head { color: var(--accent); }
+  .compare ul { list-style: none; }
+  .compare li {
+    padding: 12px 0;
+    font-size: 14.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .compare li::before {
+    font-family: var(--mono);
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .compare-col.bad li::before { content: '×'; color: var(--warn); font-size: 18px; line-height: 1; }
+  .compare-col.good li::before { content: '→'; color: var(--accent); }
+  .compare li strong { color: var(--text); font-weight: 500; }
+  @media (max-width: 800px) { .compare { grid-template-columns: 1fr; } }
+
+  /* ===== SECURITY ===== */
+  .sec-block {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .sec-text h2 { font-size: clamp(28px, 4vw, 40px); margin-bottom: 16px; }
+  .sec-text p { color: var(--text-dim); font-size: 16px; line-height: 1.55; }
+  .sec-list { display: flex; flex-direction: column; gap: 16px; }
+  .sec-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px 18px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .sec-icon {
+    width: 36px; height: 36px;
+    flex-shrink: 0;
+    background: rgba(212, 255, 58, 0.08);
+    border: 1px solid rgba(212, 255, 58, 0.25);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+  }
+  .sec-icon svg { width: 16px; height: 16px; }
+  .sec-item h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.01em; }
+  .sec-item p { font-size: 13.5px; color: var(--text-dim); line-height: 1.5; }
+  @media (max-width: 900px) {
+    .sec-block { grid-template-columns: 1fr; padding: 32px; gap: 32px; }
+  }
+
+  /* ===== EXECUTION TRACE ===== */
+  .trace-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .trace-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+  .trace-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--line-strong);
+  }
+  .trace-dot.r { background: #ff5f57; }
+  .trace-dot.y { background: #febc2e; }
+  .trace-dot.g { background: #28c840; }
+  .trace-title { margin-left: 12px; }
+  .trace-body {
+    padding: 28px 32px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+  .trace-step {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .trace-step:last-child { border-bottom: none; }
+  .trace-tag {
+    color: var(--accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-top: 2px;
+  }
+  .trace-content { color: var(--text); }
+  .trace-content .meta { color: var(--text-mute); font-size: 12.5px; margin-top: 4px; }
+  .trace-content .input { color: var(--text-dim); }
+  .trace-content .input::before { content: '> '; color: var(--accent); }
+
+  /* ===== FINAL CTA ===== */
+  .final-cta {
+    text-align: center;
+    padding: 140px 0 120px;
+    position: relative;
+  }
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(212, 255, 58, 0.06), transparent 70%);
+    pointer-events: none;
+  }
+  .final-cta h2 {
+    margin: 0 auto 20px;
+    font-size: clamp(40px, 6vw, 68px);
+  }
+  .final-cta p {
+    color: var(--text-dim);
+    font-size: 17px;
+    max-width: 520px;
+    margin: 0 auto 40px;
+  }
+  .final-cta .cta-row { justify-content: center; }
+
+  /* ===== FOOTER ===== */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-mute);
+  }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .footer-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+  .footer-links a:hover { color: var(--text); }
+
+  /* ===== ANIMATION ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .reveal {
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards;
+  }
+  .reveal.d1 { animation-delay: 0.05s; }
+  .reveal.d2 { animation-delay: 0.15s; }
+  .reveal.d3 { animation-delay: 0.25s; }
+  .reveal.d4 { animation-delay: 0.35s; }
+  .reveal.d5 { animation-delay: 0.45s; }
+
+  /* small underline accent */
+  .underline-mono {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      Valtrix
+    </div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#usecases">Use cases</a>
+      <a href="#security">Security</a>
+      <a href="#trace">Execution</a>
+    </div>
+    <a href="#cta" class="nav-cta">Request access →</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag reveal d1">
+      <span>v0.4 — Now in private beta</span>
+    </div>
+    <h1 class="reveal d2">
+      Not another <span class="strike">AI&nbsp;assistant.</span><br>
+      A deterministic <span class="accent">execution&nbsp;system</span><br>for business operations.
+    </h1>
+    <p class="hero-sub reveal d3">
+      Valtrix turns natural language into <strong>real business actions</strong> through a controlled execution pipeline. No autonomous agents. No hallucination loops. Just predictable, auditable output.
+    </p>
+    <div class="cta-row reveal d4">
+      <a href="#cta" class="btn-primary">
+        Request access
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#how" class="btn-secondary">See the pipeline</a>
+    </div>
+
+    <div class="hero-pipeline reveal d5">
+      <div class="pipeline-label">Execution pipeline</div>
+      <div class="pipeline-flow">
+        <span class="pipe-node">Slack</span>
+        <span class="pipe-arrow">→</span>
+        <span class="pipe-node">Decision Layer</span>
+        <span class="pipe-arrow">→</span>
+        <span class="pipe-node">Model Router</span>
+        <span class="pipe-arrow">→</span>
+        <span class="pipe-node highlight">Tool</span>
+        <span class="pipe-arrow">→</span>
+        <span class="pipe-node">Response</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <div class="container">
+    <div class="section-label">01 — The problem</div>
+    <h2>AI assistants don't <span class="accent">execute.</span> Agents don't <span class="accent">behave.</span></h2>
+    <p class="section-intro">The current generation of AI tools is built for conversation, not operations. That breaks the moment you need real work done.</p>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="num">// 01</div>
+        <h3>Assistants stop at suggestions</h3>
+        <p>They draft, summarize, and recommend — but the human is still the one clicking buttons in five different tools. Nothing actually ships.</p>
+      </div>
+      <div class="problem-card">
+        <div class="num">// 02</div>
+        <h3>Agents loop unpredictably</h3>
+        <p>Autonomous agents wander, hallucinate next steps, and burn tokens chasing goals you never approved. You can't audit what you can't predict.</p>
+      </div>
+      <div class="problem-card">
+        <div class="num">// 03</div>
+        <h3>Both fail at production work</h3>
+        <p>For real operations — emails, calendars, documents, research — you need bounded tools, not freeform reasoning over your business.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOLUTION ============ -->
+<section id="solution">
+  <div class="container">
+    <div class="section-label">02 — What Valtrix is</div>
+    <div class="solution-block">
+      <div class="solution-text">
+        <h2>A pipeline. Not a personality.</h2>
+        <p>Valtrix is a <strong>deterministic AI execution system</strong>. You send a command in natural language. Valtrix routes it through a decision layer, picks the right model, calls a specific tool, and returns the result.</p>
+        <p>Every step is bounded. Every output is controlled. Every action is logged.</p>
+        <div class="pull">
+          You don't talk to Valtrix. You instruct it — and it executes.
+        </div>
+        <p>It runs inside Slack, so there's no new app, no new tab, no new context to manage.</p>
+      </div>
+      <div class="solution-visual">
+        <div class="visual-row"><span class="key">type</span><span class="val">execution_system</span></div>
+        <div class="visual-row"><span class="key">interface</span><span class="val">slack</span></div>
+        <div class="visual-row"><span class="key">execution</span><span class="val yes">deterministic</span></div>
+        <div class="visual-row"><span class="key">autonomy</span><span class="val no">none</span></div>
+        <div class="visual-row"><span class="key">tools</span><span class="val">bounded</span></div>
+        <div class="visual-row"><span class="key">models</span><span class="val">openai · claude · perplexity · local</span></div>
+        <div class="visual-row"><span class="key">output</span><span class="val">structured</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how">
+  <div class="container">
+    <div class="section-label">03 — How it works</div>
+    <h2>Five stages. No surprises.</h2>
+    <p class="section-intro">Every command flows through the same pipeline. The path is fixed. The behavior is predictable.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01 / SLACK</div>
+        <h3>Command in</h3>
+        <p>You send a natural language instruction in any Slack channel or DM.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02 / DECISION</div>
+        <h3>Decision Layer</h3>
+        <p>Parses intent, selects the correct tool, validates required parameters before any model runs.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03 / ROUTER</div>
+        <h3>Model Router</h3>
+        <p>Routes to the right model for the job — reasoning, drafting, retrieval, or local inference.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04 / TOOL</div>
+        <h3>Tool execution</h3>
+        <p>Calls a single bounded tool: Outlook, Calendar, Excel, Docs, or research. Inputs and outputs are typed.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">05 / RESPONSE</div>
+        <h3>Structured response</h3>
+        <p>Returns the result back to Slack — the action taken, the data produced, and a trace of what ran.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ USE CASES ============ -->
+<section id="usecases">
+  <div class="container">
+    <div class="section-label">04 — Use cases</div>
+    <h2>What Valtrix actually <span class="accent">does</span> for you.</h2>
+    <p class="section-intro">No demos of toy apps. These are the operations Valtrix executes today, in production, for consultants and small teams.</p>
+
+    <div class="usecases">
+      <div class="usecase">
+        <span class="usecase-tag">EMAIL · OUTLOOK</span>
+        <h3>Read, draft, and send via Microsoft Graph</h3>
+        <div class="usecase-cmd"><span class="prompt">$</span>draft a reply to the Henderson proposal — push back on the timeline, hold the price</div>
+        <p>Pulls thread context, drafts in your voice, queues for review or sends. Works against your real Outlook account, not a demo inbox.</p>
+      </div>
+      <div class="usecase">
+        <span class="usecase-tag">CALENDAR</span>
+        <h3>Schedule, reschedule, defend your calendar</h3>
+        <div class="usecase-cmd"><span class="prompt">$</span>find 30 min with Priya next week, mornings only, avoid Mondays</div>
+        <p>Reads availability across attendees, proposes slots, sends invites. No back-and-forth with a scheduling bot.</p>
+      </div>
+      <div class="usecase">
+        <span class="usecase-tag">RESEARCH</span>
+        <h3>Structured research, not vibes</h3>
+        <div class="usecase-cmd"><span class="prompt">$</span>research three competitors to Datadog under 500 employees, return as table</div>
+        <p>Routes to a retrieval-capable model, extracts to a fixed schema, returns a structured table — not a paragraph that hopes you trust it.</p>
+      </div>
+      <div class="usecase">
+        <span class="usecase-tag">DOCS · EXCEL</span>
+        <h3>Multi-step document workflows</h3>
+        <div class="usecase-cmd"><span class="prompt">$</span>take Q3 numbers from the sheet, generate the partner update doc</div>
+        <p>Reads from Excel, writes to Word, formats consistently. Multi-step workflows execute as a pipeline, not as a chat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY NOT AGENTS ============ -->
+<section id="contrast">
+  <div class="container">
+    <div class="section-label">05 — Why not agents</div>
+    <h2>Controlled execution, not <span class="accent">autonomy theater.</span></h2>
+    <p class="section-intro">Autonomous agents make a great demo. They make a terrible operator. Here's the difference, line by line.</p>
+
+    <div class="compare">
+      <div class="compare-col bad">
+        <div class="compare-head">Autonomous AI agents</div>
+        <ul>
+          <li><strong>Decide their own next step.</strong> You don't know what will run until it runs.</li>
+          <li><strong>Loop until satisfied.</strong> Or until you cut them off. Or until tokens run out.</li>
+          <li><strong>Hallucinate tools and parameters</strong> they don't actually have access to.</li>
+          <li><strong>Hard to audit.</strong> Reasoning chains drift, branch, and contradict.</li>
+          <li><strong>Probabilistic outcomes.</strong> Same prompt, different result, different cost.</li>
+        </ul>
+      </div>
+      <div class="compare-col good">
+        <div class="compare-head">Valtrix execution system</div>
+        <ul>
+          <li><strong>Fixed pipeline.</strong> Every command runs through the same five stages.</li>
+          <li><strong>One tool per command.</strong> No nested calls, no recursive planning.</li>
+          <li><strong>Typed inputs and outputs.</strong> Tools refuse malformed parameters before any model runs.</li>
+          <li><strong>Fully traceable.</strong> Every command produces a log of model, tool, and payload.</li>
+          <li><strong>Deterministic where it matters.</strong> The system layer is predictable; only generation is probabilistic.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECURITY ============ -->
+<section id="security">
+  <div class="container">
+    <div class="section-label">06 — Security</div>
+    <div class="sec-block">
+      <div class="sec-text">
+        <h2>Built for systems people <span class="accent">trust.</span></h2>
+        <p>Valtrix runs against real accounts, real inboxes, real data. The security model treats every command as untrusted input until verified, signed, and bounded.</p>
+      </div>
+      <div class="sec-list">
+        <div class="sec-item">
+          <div class="sec-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/></svg>
+          </div>
+          <div>
+            <h4>HMAC request validation</h4>
+            <p>Every Slack-to-Valtrix request is signed and verified. Unsigned or replayed requests are rejected at the edge.</p>
+          </div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div>
+            <h4>Secrets management</h4>
+            <p>API keys, OAuth tokens, and account credentials are stored encrypted at rest and never logged in plaintext.</p>
+          </div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+          </div>
+          <div>
+            <h4>Strict tool execution boundaries</h4>
+            <p>Tools accept typed inputs only. No tool can call another tool. No model can invent a tool. The boundary is enforced in code.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXECUTION TRACE ============ -->
+<section id="trace">
+  <div class="container">
+    <div class="section-label">07 — What happens when you send a command</div>
+    <h2>One command. Six logged stages.</h2>
+    <p class="section-intro">A real trace from a single Slack command. Every stage is recorded; every payload is bounded.</p>
+
+    <div class="trace-wrap">
+      <div class="trace-head">
+        <span class="trace-dot r"></span>
+        <span class="trace-dot y"></span>
+        <span class="trace-dot g"></span>
+        <span class="trace-title">execution_trace · cmd_8f3a2c</span>
+      </div>
+      <div class="trace-body">
+
+        <div class="trace-step">
+          <div class="trace-tag">[ 01 / IN ]</div>
+          <div class="trace-content">
+            <div class="input">summarize today's emails from clients, draft replies to the urgent ones</div>
+            <div class="meta">source: slack · channel: #ops · user_id: U07AC2K · t+0ms</div>
+          </div>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-tag">[ 02 / VERIFY ]</div>
+          <div class="trace-content">
+            HMAC signature valid · timestamp within window · user authorized
+            <div class="meta">no replay · payload sanitized · t+12ms</div>
+          </div>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-tag">[ 03 / DECIDE ]</div>
+          <div class="trace-content">
+            intent → <span style="color:var(--accent)">email.read_and_draft</span> · tool selected · params validated
+            <div class="meta">no model call yet · pure routing logic · t+18ms</div>
+          </div>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-tag">[ 04 / ROUTE ]</div>
+          <div class="trace-content">
+            model → <span style="color:var(--accent)">claude-sonnet</span> for drafting · structured output schema attached
+            <div class="meta">temperature: 0.2 · max_tokens: bounded · t+24ms</div>
+          </div>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-tag">[ 05 / EXEC ]</div>
+          <div class="trace-content">
+            tool: <span style="color:var(--accent)">outlook.list_messages</span> → 23 fetched · filtered to client domain · 4 flagged urgent
+            <div class="meta">tool: outlook.draft_reply × 4 · queued for human approval · t+2.1s</div>
+          </div>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-tag">[ 06 / OUT ]</div>
+          <div class="trace-content">
+            response posted to slack · 4 drafts ready for review · summary attached
+            <div class="meta">total: 2.3s · tokens: 4,182 · cost: $0.018 · t+2.3s</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section id="cta" class="final-cta">
+  <div class="container">
+    <h2>Stop chatting with AI.<br><span class="accent">Start running operations.</span></h2>
+    <p>Valtrix is in private beta with a small group of consultants, founders, and small teams. We're onboarding new users weekly.</p>
+    <div class="cta-row">
+      <a href="#" class="btn-primary">
+        Request access
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#how" class="btn-secondary">Read the technical brief</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-meta">
+        Valtrix is built by <span style="color: var(--text);">ValtrixOps</span> · © 2026
+      </div>
+      <div class="footer-links">
+        <a href="#">Docs</a>
+        <a href="#">Changelog</a>
+        <a href="#">Security</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
